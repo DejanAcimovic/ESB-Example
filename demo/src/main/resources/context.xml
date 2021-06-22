@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:int="http://www.springframework.org/schema/integration"
+	xmlns:int-amqp="http://www.springframework.org/schema/integration/amqp"
+	xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+	xsi:schemaLocation="http://www.springframework.org/schema/integration/amqp https://www.springframework.org/schema/integration/amqp/spring-integration-amqp.xsd
+		http://www.springframework.org/schema/integration https://www.springframework.org/schema/integration/spring-integration.xsd
+		http://www.springframework.org/schema/rabbit https://www.springframework.org/schema/rabbit/spring-rabbit.xsd
+		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<!-- From STDIN To RabbitMQ -->
+
+	<int-amqp:inbound-channel-adapter channel="fromRabbit"
+                                        queue-names="personQueue"
+                                        connection-factory="connectionFactory"
+                                        />
+	<int-amqp:outbound-channel-adapter 	channel="toRabbitTransformed"
+										amqp-template="amqpTemplate"
+										exchange-name="demo.personReply.exchange"
+										routing-key="demo.personReply.binding"
+										/>
+
+    <int:service-activator  input-channel="fromRabbitTransformed"
+                        ref="messageReceiver"
+                        method="PersonInformationChanged"
+						output-channel="toRabbit"/>
+
+	<int:json-to-object-transformer input-channel="fromRabbit" output-channel="fromRabbitTransformed" type="com.example.rabbit.demo.models.Person"/>
+	<int:object-to-json-transformer input-channel="toRabbit" output-channel="toRabbitTransformed"/>
+
+	<int:channel id="fromRabbit" />
+	<int:channel id="toRabbit" />
+	<int:channel id="fromRabbitTransformed" />	
+	<int:channel id="toRabbitTransformed" />
+
+
+	<int-amqp:inbound-channel-adapter channel="exceptionInput"
+                                        queue-names="errorHandlingQueue"
+                                        connection-factory="connectionFactory"
+                                        />
+
+	
+	<int:channel id="exceptionInput" />
+	<int:service-activator  input-channel="exceptionInput"
+					ref="messageReceiver"
+					method="ExceptionExample"/>
+
+
+
+	<!-- Infrastructure -->
+
+	<rabbit:connection-factory id="connectionFactory" host="localhost" username="guest" password="guest"/>
+
+	<rabbit:template id="amqpTemplate" connection-factory="connectionFactory" />
+
+	<rabbit:admin connection-factory="connectionFactory" />
+
+	<rabbit:queue name="personQueue" />	
+	<rabbit:queue name="personReplyQueue" />
+	
+	<rabbit:queue name="errorHandlingQueue">
+		<rabbit:queue-arguments>
+			<entry key="x-dead-letter-exchange" value="demo.errorHandling.exchange" />
+			<entry key="x-dead-letter-routing-key" value="demo.errorHandling.binding" />
+		</rabbit:queue-arguments>
+	</rabbit:queue>
+	<rabbit:queue name="deadLetterQueue" />
+	<rabbit:queue name="parkingLotQueue" />
+
+	<rabbit:direct-exchange name="demo.personReply.exchange">
+		<rabbit:bindings>
+			<rabbit:binding queue="personReplyQueue" key="demo.personReply.binding" />
+		</rabbit:bindings>
+	</rabbit:direct-exchange>
+
+	<rabbit:direct-exchange name="demo.errorHandling.exchange">
+		<rabbit:bindings>
+			<rabbit:binding queue="deadLetterQueue" key="demo.errorHandling.binding" />
+		</rabbit:bindings>
+	</rabbit:direct-exchange>
+
+	
+	<rabbit:direct-exchange name="demo.errorMaking.exchange">
+		<rabbit:bindings>
+			<rabbit:binding queue="errorHandlingQueue" key="demo.errorMaking.binding" />
+		</rabbit:bindings>
+	</rabbit:direct-exchange>
+
+	<rabbit:direct-exchange name="demo.parkingLot.exchange">
+		<rabbit:bindings>
+			<rabbit:binding queue="parkingLotQueue" key="demo.parkingLot.binding" />
+		</rabbit:bindings>
+	</rabbit:direct-exchange>
+
+    <bean id="messageReceiver" class="com.example.rabbit.demo.MessageReceiver" />
+</beans>

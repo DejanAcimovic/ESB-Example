@@ -1,0 +1,27 @@
+{
+  "name": "etf-sarajevo/zamger",
+  "description": "Zamger educational information system",
+  "version": "4.3.0",
+  "type": "project",
+  "homepage": "https://zamger.etf.unsa.ba",
+  "minimum-stability": "stable",
+  "license": "AGPL-3.0-or-later",
+  "authors": [
+    {
+      "name": "Vedran Ljubović",
+      "email": "vljubovic@etf.unsa.ba"
+    }
+  ],
+  "require": {
+    "stevenmaguire/oauth2-keycloak": "^2.1",
+    "ext-json": "*",
+    "ext-gd": "*",
+    "ext-ldap": "*",
+    "ext-xml": "*",
+    "geshi/geshi": "^1.0.9.1",
+    "pclzip/pclzip": "^2.8.2",
+    "tecnickcom/tcpdf" : "^6.3.5",
+    "jasig/phpcas": "^1.3.8", 
+    "php-amqplib/php-amqplib": "^2.6"
+  }
+}
